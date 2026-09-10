@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Liora — Voice & Physical Memory Assistant</title>
+  <meta name="description" content="Voice-powered memory for physical belongings, helping students and young professionals keep track of what they store, pack, lend, and borrow."/>
+  <meta name="theme-color" content="#003594"/>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23003594' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 4v13a3 3 0 0 0 3 3h11'/%3E%3Ccircle cx='18' cy='8' r='3' fill='%239defe3' stroke='none'/%3E%3C/svg%3E"/>
+  
+  <!-- Open Graph / Social Media -->
+  <meta property="og:type" content="website"/>
+  <meta property="og:title" content="Liora — Voice & Physical Memory Assistant"/>
+  <meta property="og:description" content="Tell Liora where something goes once. Ask for it whenever you forget."/>
+  <meta property="og:image" content="/og-image.png"/>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#003594",
+            "primary-container": "#004ac6",
+            "on-primary": "#ffffff",
+            "secondary": "#016a61",
+            "secondary-container": "#9defe3",
+            "on-secondary": "#ffffff",
+            "background": "#f8faff",
+            "surface": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f1f4fc",
+            "surface-container": "#e8edfa",
+            "surface-container-high": "#dfe5f5",
+            "on-surface": "#0f172a",
+            "on-surface-variant": "#475569",
+            "outline": "#94a3b8",
+            "outline-variant": "#cbd5e1",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6",
+            "on-error": "#ffffff"
+          },
+          borderRadius: {
+            "DEFAULT": "0.875rem",
+            "lg": "1.25rem",
+            "xl": "1.75rem",
+            "2xl": "2rem",
+            "full": "9999px"
+          },
+          spacing: {
+            "space-2xs": "0.25rem",
+            "space-xs": "0.5rem",
+            "space-sm": "0.75rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2rem"
+          },
+          fontFamily: {
+            "body-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "body-md": ["Plus Jakarta Sans", "sans-serif"],
+            "title-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "display-hero": ["Plus Jakarta Sans", "sans-serif"],
+            "label-mono-sm": ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+  <link href="styles.css" rel="stylesheet"/>
+  <style>
+    /* Always-visible page scrollbar on the right edge of the screen */
+    html {
+      overflow-y: scroll !important;
+      scrollbar-width: thin !important;
+      scrollbar-color: rgba(148, 163, 184, 0.6) #f1f5f9 !important;
+    }
+    body {
+      min-height: 100vh !important;
+    }
+    ::-webkit-scrollbar {
+      width: 9px !important;
+      height: 9px !important;
+      display: block !important;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9 !important;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: rgba(148, 163, 184, 0.6) !important;
+      border-radius: 9999px !important;
+      border: 2px solid #f1f5f9 !important;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(100, 116, 139, 0.85) !important;
+    }
+    /* Dedicated internal scrollbar inside the assistant chat panel */
+    .chat-scroll {
+      overflow-y: scroll !important;
+      scrollbar-width: thin !important;
+      scrollbar-color: rgba(148, 163, 184, 0.5) rgba(241, 245, 249, 0.6) !important;
+    }
+    .chat-scroll::-webkit-scrollbar {
+      width: 6px !important;
+      display: block !important;
+    }
+    .chat-scroll::-webkit-scrollbar-track {
+      background: rgba(241, 245, 249, 0.6) !important;
+      border-radius: 9999px !important;
+    }
+    .chat-scroll::-webkit-scrollbar-thumb {
+      background-color: rgba(148, 163, 184, 0.5) !important;
+      border-radius: 9999px !important;
+    }
+  </style>
+</head>
+<body class="bg-background font-body-md text-on-surface antialiased">
+
+  <!-- Mobile Sidebar Backdrop -->
+  <div id="sidebarBackdrop" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 hidden" aria-hidden="true"></div>
+
+  <!-- Sidebar Navigation (Responsive Drawer below 900px) -->
+  <aside id="appSidebar" class="sidebar fixed left-0 top-0 h-full bg-surface-container-lowest flex flex-col justify-between p-space-md border-r border-slate-200/80 shadow-[1px_0_6px_rgba(15,23,42,0.02)]">
+    <div class="flex flex-col gap-space-lg">
+      
+      <!-- Brand & Status -->
+      <div class="flex items-center justify-between px-space-xs pt-space-2xs">
+        <div class="flex items-center gap-space-sm">
+          <!-- Bespoke Liora Logo -->
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-primary-container flex items-center justify-center text-white shadow-sm shadow-primary/20">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 4v13a3 3 0 0 0 3 3h11"/>
+              <circle cx="18" cy="8" r="2" fill="#9defe3" stroke="none"/>
+            </svg>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-[17px] font-bold text-on-surface tracking-tight leading-none">Liora</span>
+            <span class="font-label-mono-sm text-[10px] text-outline uppercase tracking-wider mt-1">Memory Studio</span>
+          </div>
+        </div>
+        <!-- Mobile Drawer Close Button -->
+        <button type="button" id="sidebarCloseBtn" class="min-[900px]:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors" aria-label="Close sidebar">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav id="sidebarNav" class="flex flex-col gap-1 px-space-xs" data-active-classes="bg-surface-container text-primary font-semibold">
+        <a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-surface-container hover:text-on-surface transition-all" data-path="all" href="javascript:void(0)">
+          <span class="material-symbols-outlined text-[20px]">dashboard</span><span>Overview</span>
+        </a>
+        <a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-surface-container hover:text-on-surface transition-all" data-path="stored" href="javascript:void(0)">
+          <span class="material-symbols-outlined text-[20px]">inventory_2</span><span>My Things</span>
+        </a>
+        <a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-surface-container hover:text-on-surface transition-all" data-path="lent" href="javascript:void(0)">
+          <span class="material-symbols-outlined text-[20px]">arrow_outward</span><span>Lent</span>
+        </a>
+        <a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-surface-container hover:text-on-surface transition-all" data-path="borrowed" href="javascript:void(0)">
+          <span class="material-symbols-outlined text-[20px]">call_received</span><span>Borrowed</span>
+        </a>
+        <a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-surface-container hover:text-on-surface transition-all" data-path="history" href="javascript:void(0)">
+          <span class="material-symbols-outlined text-[20px]">history</span><span>History</span>
+        </a>
+        <a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-DEFAULT text-on-surface-variant font-medium hover:bg-surface-container hover:text-on-surface transition-all" id="howItWorksNavBtn" href="javascript:void(0)">
+          <span class="material-symbols-outlined text-[20px]">help_outline</span><span>How Liora Works</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Sidebar Footer: Private by design -->
+    <div class="flex flex-col gap-space-sm px-space-xs pb-space-xs">
+      <div class="p-3.5 rounded-2xl bg-surface-container-low border border-slate-200/80 shadow-2xs flex flex-col">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-emerald-100/80 text-emerald-600 flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[19px]">verified_user</span>
+          </div>
+          <span class="text-[14px] font-bold text-on-surface tracking-tight">Private by design</span>
+        </div>
+        <p class="text-[12px] text-on-surface-variant leading-relaxed mt-2">Saved records remain in this browser on this device.</p>
+        <button type="button" id="openPrivacyBtn" class="text-[13px] font-medium text-primary hover:text-primary-container transition-colors flex items-center gap-1 mt-2.5 text-left group">
+          <span class="group-hover:underline">View privacy details</span>
+          <span class="material-symbols-outlined text-[15px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="app-area w-full min-w-0">
+
+    <!-- Top Navigation Header -->
+    <header class="topbar fixed top-0 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-slate-200/80 z-30 flex items-center justify-between px-3 sm:px-6 md:px-8 gap-2">
+      <!-- Mobile Hamburger Button (<900px) -->
+      <button type="button" id="mobileMenuBtn" class="min-[900px]:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors shrink-0" aria-label="Open menu">
+        <span class="material-symbols-outlined text-[22px]">menu</span>
+      </button>
+
+      <!-- Center Search Bar -->
+      <div class="flex-1 max-w-xl mx-auto px-1 sm:px-2 min-w-0">
+        <div class="relative w-full flex items-center">
+          <span class="material-symbols-outlined absolute left-3 text-slate-400 text-[18px] pointer-events-none">search</span>
+          <input id="searchInput" class="w-full h-10 pl-9 pr-10 sm:pr-14 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface text-[13px] sm:text-[13.5px] placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary border border-transparent transition-all shadow-inner" placeholder="Search belongings, places, tags..." type="text" autocomplete="off"/>
+          <kbd class="hidden sm:inline-block absolute right-3.5 px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-mono-sm text-[10px]">⌘K</kbd>
+        </div>
+      </div>
+
+      <!-- Right side: Quick Actions -->
+      <div class="flex items-center justify-end gap-1.5 shrink-0">
+        <button id="addBtn" class="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2 rounded-full bg-primary text-white font-semibold text-[12.5px] sm:text-[13px] hover:bg-primary-container transition-all shadow-sm active:scale-95 touch-target">
+          <span class="material-symbols-outlined text-[18px]">add</span>
+          <span class="hidden xs:inline">Add item</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="relative pt-20 sm:pt-24 pb-48 bg-background min-h-screen w-full max-w-[1600px] mx-auto px-3 sm:px-6 md:px-8">
+      <div class="dashboard-layout items-start">
+
+        <!-- Left Workspace: Page Elements Feed -->
+        <div id="pageElementsPane" class="flex flex-col gap-space-lg min-h-[calc(100vh-14rem)] min-w-0">
+
+          <!-- View Header: Identical text position across all pages -->
+          <div class="flex flex-col gap-1 pb-1">
+            <h1 id="viewTitle" class="text-[26px] sm:text-[32px] text-on-surface font-bold tracking-tight leading-tight">
+              Good to have you back.
+            </h1>
+            <p id="viewDesc" class="text-[13.5px] sm:text-[14px] text-on-surface-variant max-w-xl">
+              Everything you care about, right where you expect it.
+            </p>
+          </div>
+
+          <!-- Quick Metrics Ribbon -->
+          <div class="stats-grid">
+            <div class="bg-surface-container-lowest p-3 sm:p-space-md rounded-DEFAULT border border-slate-200/60 shadow-[0_1px_3px_rgba(15,23,42,0.03)] flex flex-col gap-1">
+              <span class="font-label-mono-sm text-[10.5px] sm:text-[11px] text-outline uppercase tracking-wider">Tracked</span>
+              <span id="metricTracked" class="text-[22px] sm:text-[26px] font-bold text-on-surface leading-none">0</span>
+            </div>
+            <div class="bg-surface-container-lowest p-3 sm:p-space-md rounded-DEFAULT border border-slate-200/60 shadow-[0_1px_3px_rgba(15,23,42,0.03)] flex flex-col gap-1">
+              <span class="font-label-mono-sm text-[10.5px] sm:text-[11px] text-outline uppercase tracking-wider">Lent Out</span>
+              <span id="metricLent" class="text-[22px] sm:text-[26px] font-bold text-primary leading-none">0</span>
+            </div>
+            <div class="bg-surface-container-lowest p-3 sm:p-space-md rounded-DEFAULT border border-slate-200/60 shadow-[0_1px_3px_rgba(15,23,42,0.03)] flex flex-col gap-1">
+              <span class="font-label-mono-sm text-[10.5px] sm:text-[11px] text-outline uppercase tracking-wider">Borrowed</span>
+              <span id="metricBorrowed" class="text-[22px] sm:text-[26px] font-bold text-on-surface leading-none">0</span>
+            </div>
+            <div class="bg-surface-container-lowest p-3 sm:p-space-md rounded-DEFAULT border border-slate-200/60 shadow-[0_1px_3px_rgba(15,23,42,0.03)] flex flex-col gap-1">
+              <span class="font-label-mono-sm text-[10.5px] sm:text-[11px] text-outline uppercase tracking-wider">At Home</span>
+              <span id="metricStored" class="text-[22px] sm:text-[26px] font-bold text-secondary leading-none">0</span>
+            </div>
+          </div>
+
+          <!-- Interactive Filter & Place Bar -->
+          <div class="flex flex-wrap items-center justify-between gap-2.5 bg-surface-container-lowest p-2.5 sm:p-3 rounded-xl border border-slate-200/70 shadow-[0_1px_3px_rgba(15,23,42,0.02)]">
+            <!-- Filter Pills -->
+            <div id="filterPills" class="flex items-center gap-1 sm:gap-1.5 py-0.5 overflow-x-auto max-w-full">
+              <button type="button" data-filter="all" class="filter-pill px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all bg-primary text-white shadow-xs shrink-0">All</button>
+              <button type="button" data-filter="stored" class="filter-pill px-3 py-1.5 rounded-full text-[12px] font-medium text-slate-600 hover:bg-slate-100 transition-all shrink-0">At home</button>
+              <button type="button" data-filter="packed" class="filter-pill px-3 py-1.5 rounded-full text-[12px] font-medium text-slate-600 hover:bg-slate-100 transition-all shrink-0">Packed</button>
+              <button type="button" data-filter="lent" class="filter-pill px-3 py-1.5 rounded-full text-[12px] font-medium text-slate-600 hover:bg-slate-100 transition-all shrink-0">Lent</button>
+              <button type="button" data-filter="borrowed" class="filter-pill px-3 py-1.5 rounded-full text-[12px] font-medium text-slate-600 hover:bg-slate-100 transition-all shrink-0">Borrowed</button>
+            </div>
+
+            <!-- Place & Sort Controls -->
+            <div class="flex items-center gap-2 shrink-0 flex-wrap">
+              <!-- Place Filter Dropdown -->
+              <div class="relative flex items-center">
+                <select id="placeFilter" class="appearance-none bg-surface-container-low text-on-surface text-[12px] font-medium pl-2.5 pr-7 py-1.5 rounded-lg border border-slate-200 focus:outline-primary cursor-pointer max-w-[150px] sm:max-w-[170px] truncate" title="Filter by place">
+                  <option value="all">📍 All Places</option>
+                </select>
+                <span class="material-symbols-outlined absolute right-1.5 text-slate-400 text-[16px] pointer-events-none">expand_more</span>
+              </div>
+
+              <!-- Sort Dropdown -->
+              <div class="relative flex items-center">
+                <select id="sortSelect" class="appearance-none bg-surface-container-low text-on-surface text-[12px] font-medium pl-2.5 pr-7 py-1.5 rounded-lg border border-slate-200 focus:outline-primary cursor-pointer" title="Sort items">
+                  <option value="newest">🕒 Newest</option>
+                  <option value="updated">⚡ Recent</option>
+                  <option value="alpha">🔤 Name</option>
+                </select>
+                <span class="material-symbols-outlined absolute right-1.5 text-slate-400 text-[16px] pointer-events-none">expand_more</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Memory Cards Grid -->
+          <div id="list" class="items-grid">
+            <!-- Rendered cards injected by JavaScript -->
+          </div>
+
+          <!-- Empty State -->
+          <div id="emptyState" class="hidden text-center py-10 px-4 bg-surface-container-lowest rounded-DEFAULT border border-dashed border-slate-200 flex flex-col items-center justify-center">
+            <span class="material-symbols-outlined text-[36px] text-outline mb-2">inbox</span>
+            <p class="font-semibold text-on-surface text-[15px]">No items found</p>
+            <p class="text-body-sm text-outline mt-0.5 mb-4 max-w-sm">Use the "Add item" button, speak to Liora, or load sample demo records to explore.</p>
+            <button type="button" id="loadDemoBtn" class="flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary/10 hover:bg-primary/20 text-primary font-semibold text-[13px] transition-colors border border-primary/20">
+              <span class="material-symbols-outlined text-[17px]">auto_awesome</span>
+              <span>Load demo items</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Workspace: Dedicated Chat Assistant with Internal Scroll -->
+        <div class="assistant-pane sticky top-24 h-[calc(100vh-10rem)] flex flex-col min-w-0">
+          <div class="bg-surface-container-lowest rounded-2xl p-4 sm:p-space-lg border border-slate-200/80 shadow-sm flex flex-col h-full overflow-hidden">
+
+            <!-- Assistant Header with Live Indicator (Pinned) -->
+            <div class="flex items-center justify-between pb-space-sm border-b border-slate-100 shrink-0">
+              <div class="flex items-center gap-2.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                <div class="flex flex-col leading-tight">
+                  <span class="text-[13px] font-bold text-on-surface tracking-tight">Liora Voice</span>
+                  <span class="text-[11px] font-semibold text-on-surface-variant">Assistant</span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button type="button" id="loadDemoAssistantBtn" class="text-[11px] font-medium text-primary hover:text-primary-container px-2 py-0.5 rounded-md hover:bg-primary/5 transition-colors" title="Load sample records">
+                  Demo Data
+                </button>
+                <div id="connectionStatus" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-low hidden">
+                  <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                  <span id="connectionLabel" class="font-label-mono-sm text-[10px] font-semibold text-secondary">Active</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Messages List (Dedicated Independent Scroll) -->
+            <div id="messages" class="flex-1 min-h-0 overflow-y-auto chat-scroll flex flex-col gap-space-sm py-space-sm pr-1">
+              <!-- Dynamically populated chat bubbles -->
+            </div>
+
+            <!-- Assistant Card Footer: Ultra-compact Micro Suggestions -->
+            <div class="pt-1.5 border-t border-slate-100 shrink-0 flex items-center justify-center gap-1">
+              <div id="suggestions" class="flex items-center justify-center gap-1.5 py-0.5 flex-wrap">
+                <button type="button" class="px-2 py-0.5 rounded-full bg-surface-container-low hover:bg-surface-container text-slate-500 hover:text-slate-800 text-[10.5px] font-medium transition-colors">Where are my keys?</button>
+                <button type="button" class="px-2 py-0.5 rounded-full bg-surface-container-low hover:bg-surface-container text-slate-500 hover:text-slate-800 text-[10.5px] font-medium transition-colors">How can you help me?</button>
+                <button type="button" class="px-2 py-0.5 rounded-full bg-surface-container-low hover:bg-surface-container text-slate-500 hover:text-slate-800 text-[10.5px] font-medium transition-colors">What did I lend?</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- FLOATING INTERACTIVE TYPE CONSOLE -->
+      <div id="typeConsole" class="type-console fixed bottom-4 sm:bottom-6 right-0 z-40 flex items-center justify-center px-2 sm:px-4 pointer-events-none pb-[env(safe-area-inset-bottom,0px)]">
+        <div class="pointer-events-auto bg-white/95 backdrop-blur-xl rounded-2xl sm:rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-slate-200/90 p-1.5 sm:p-2 flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-[min(calc(100%-16px),720px)] transition-all">
+          
+          <!-- Segmented Mode Pills -->
+          <div class="flex items-center bg-slate-100/90 rounded-full p-1 shrink-0">
+            <button id="modeTypeBtn" class="px-2.5 sm:px-3.5 py-1.5 rounded-full bg-white text-primary text-[11.5px] sm:text-[12px] font-bold shadow-sm flex items-center gap-1 sm:gap-1.5 transition-all">
+              <span class="material-symbols-outlined text-[15px]">keyboard</span>
+              <span class="hidden xs:inline">Type</span>
+            </button>
+            <button id="modeVoiceBtn" class="px-2.5 sm:px-3.5 py-1.5 rounded-full text-slate-500 hover:text-slate-800 text-[11.5px] sm:text-[12px] font-medium flex items-center gap-1 sm:gap-1.5 transition-all">
+              <span class="material-symbols-outlined text-[15px]">mic</span>
+              <span class="hidden xs:inline">Voice</span>
+            </button>
+          </div>
+
+          <!-- Center Text Input -->
+          <div class="flex-1 flex items-center min-w-[140px]">
+            <input id="chatInput" class="w-full bg-transparent text-slate-800 text-[13px] sm:text-[13.5px] placeholder:text-slate-400 focus:outline-none px-2" placeholder="Ask Liora where something is, or record a new item..." type="text" autocomplete="off"/>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center gap-1.5 shrink-0 pr-0.5 sm:pr-1">
+            <button id="sendBtn" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-primary flex items-center justify-center transition-all touch-target" aria-label="Send message" title="Send message">
+              <span class="material-symbols-outlined text-[18px]">arrow_upward</span>
+            </button>
+            <button id="talkBtn" class="w-10 h-10 rounded-full bg-primary hover:bg-primary-container text-white flex items-center justify-center shadow-md shadow-primary/25 transition-all touch-target" aria-label="Start Voice Session" title="Start Voice Session">
+              <span class="material-symbols-outlined text-[20px]">mic</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- FLOATING ACTIVE VOICE CAPSULE -->
+      <div id="voiceCapsule" class="voice-capsule fixed bottom-4 sm:bottom-6 right-0 z-40 flex items-center justify-center px-2 sm:px-4 pointer-events-none hidden pb-[env(safe-area-inset-bottom,0px)]">
+        <div class="pointer-events-auto bg-white/95 backdrop-blur-2xl rounded-2xl sm:rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-slate-200/90 p-2 sm:p-2.5 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 sm:gap-3 w-[min(calc(100%-16px),780px)] transition-all">
+          
+          <!-- Left: Blue circular mic icon + Status text -->
+          <div class="flex items-center gap-2.5 sm:gap-3 pl-1 shrink-0">
+            <div class="relative flex items-center justify-center">
+              <div class="sonar-ring absolute w-12 sm:w-14 h-12 sm:h-14 rounded-full bg-primary/20"></div>
+              <div class="relative z-10 w-9 sm:w-10 h-9 sm:h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-md shadow-primary/25">
+                <span class="material-symbols-outlined text-[20px] sm:text-[22px]">mic</span>
+              </div>
+            </div>
+            <div class="flex flex-col leading-tight min-w-[120px]">
+              <span id="voiceStatusLabel" class="text-[12.5px] sm:text-[13.5px] font-bold text-slate-800 truncate">Listening...</span>
+              <span class="font-label-mono-sm text-[9.5px] sm:text-[10px] text-slate-400">Live Voice Agent</span>
+            </div>
+          </div>
+
+          <!-- Middle: Audio Equalizer Wave Bars -->
+          <div class="flex-1 hidden md:flex items-center justify-center px-2 min-w-0 max-w-xs">
+            <div id="voiceBars" class="w-full h-8 bg-slate-100/90 rounded-full px-3 flex items-center justify-between gap-1 shadow-inner overflow-hidden">
+              <span class="wave-bar w-1 rounded-full bg-primary [animation-delay:0.1s]"></span>
+              <span class="wave-bar w-1 rounded-full bg-secondary [animation-delay:0.35s]"></span>
+              <span class="wave-bar w-1 rounded-full bg-primary [animation-delay:0.6s]"></span>
+              <span class="wave-bar w-1 rounded-full bg-secondary [animation-delay:0.2s]"></span>
+              <span class="wave-bar w-1 rounded-full bg-primary [animation-delay:0.75s]"></span>
+              <span class="wave-bar w-1 rounded-full bg-secondary [animation-delay:0.05s]"></span>
+              <span class="wave-bar w-1 rounded-full bg-primary [animation-delay:0.45s]"></span>
+              <span class="wave-bar w-1 rounded-full bg-secondary [animation-delay:0.9s]"></span>
+            </div>
+          </div>
+
+          <!-- Right: Controls -->
+          <div class="flex items-center gap-1.5 sm:gap-2 shrink-0 pr-1">
+            <button id="muteButton" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all touch-target" aria-label="Mute microphone" title="Mute microphone">
+              <span class="material-symbols-outlined text-[18px]">mic_off</span>
+            </button>
+            <button id="voiceTypeBtn" class="px-3 py-1.5 sm:py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11.5px] sm:text-[12px] font-semibold flex items-center gap-1 transition-all touch-target">
+              <span class="material-symbols-outlined text-[15px]">keyboard</span>
+              <span>Type</span>
+            </button>
+            <button id="endBtn" class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-red-600 hover:bg-red-700 active:scale-95 text-white text-[11.5px] sm:text-[12px] font-bold shadow-md shadow-red-600/20 flex items-center gap-1 transition-all touch-target">
+              <span class="material-symbols-outlined text-[15px]">call_end</span>
+              <span>End</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-on-surface text-surface-container-lowest rounded-full font-label-mono-sm text-[12px] transition-all shadow-lg flex items-center gap-2 z-50 opacity-0 pointer-events-none">
+    <span class="material-symbols-outlined text-[18px]">info</span><span>Message</span>
+  </div>
+
+  <!-- Dialog Modals -->
+  <div id="modalsContainer">
+
+    <!-- Add / Edit Item Dialog -->
+    <dialog id="actionDialog" class="bg-surface-container-lowest text-on-surface p-6 rounded-2xl shadow-2xl backdrop:bg-slate-900/40 w-full max-w-md m-auto border border-slate-200">
+      <form id="actionForm">
+        <div class="flex items-center justify-between mb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-primary-container text-on-primary flex items-center justify-center">
+              <span class="material-symbols-outlined">add</span>
+            </div>
+            <div>
+              <p class="font-label-mono-sm text-[10px] uppercase text-outline">LIORA MEMORY</p>
+              <h2 id="dialogTitle" class="font-title-sm text-[16px] font-semibold">Add a thing</h2>
+            </div>
+          </div>
+          <button type="button" data-close class="text-outline hover:text-on-surface"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <input type="hidden" id="editingId"/>
+        <div class="flex flex-col gap-4">
+          <label class="flex flex-col gap-1 font-label-mono-sm text-[11px] text-on-surface-variant">What happened?
+            <select id="actionInput" class="border border-outline-variant bg-surface-container-low rounded-lg p-2 text-body-md text-on-surface mt-1 focus:outline-primary">
+              <option value="stored">I put something somewhere</option>
+              <option value="packed">I packed something in a bag</option>
+              <option value="lent">I lent something to someone</option>
+              <option value="borrowed">I borrowed something</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-1 font-label-mono-sm text-[11px] text-on-surface-variant">Item name
+            <input id="itemInput" class="border border-outline-variant bg-surface-container-low rounded-lg p-2 text-body-md text-on-surface mt-1 focus:outline-primary" required maxlength="80" autocomplete="off" placeholder="e.g. Passport"/>
+          </label>
+          <label class="flex flex-col gap-1 font-label-mono-sm text-[11px] text-on-surface-variant"><span id="detailLabel">Where is it?</span>
+            <input id="detailInput" class="border border-outline-variant bg-surface-container-low rounded-lg p-2 text-body-md text-on-surface mt-1 focus:outline-primary" required maxlength="100" autocomplete="off" placeholder="e.g. Top desk drawer"/>
+          </label>
+          <label id="dueField" class="hidden flex flex-col gap-1 font-label-mono-sm text-[11px] text-on-surface-variant">Return date <span class="text-xs text-outline">Optional</span>
+            <input id="dueInput" type="date" class="border border-outline-variant bg-surface-container-low rounded-lg p-2 text-body-md text-on-surface mt-1 focus:outline-primary"/>
+          </label>
+        </div>
+        <div id="currentContext" class="hidden mt-4 p-3 bg-surface-container-low rounded-lg text-sm text-on-surface-variant border border-outline-variant"></div>
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" data-close class="px-4 py-2 rounded-full bg-surface-container hover:bg-surface-variant text-on-surface font-title-sm text-[13px] transition-colors">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-full bg-primary hover:bg-primary-container text-on-primary font-title-sm text-[13px] transition-colors shadow-md">Review change</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Confirmation Dialog -->
+    <dialog id="confirmDialog" class="bg-surface-container-lowest text-on-surface p-6 rounded-2xl shadow-2xl backdrop:bg-slate-900/40 w-full max-w-md m-auto border border-slate-200">
+      <div class="flex flex-col gap-2 text-center items-center">
+        <div class="w-12 h-12 rounded-full bg-secondary-container text-secondary flex items-center justify-center mb-1">
+          <span class="material-symbols-outlined text-[28px]">check_circle</span>
+        </div>
+        <p class="font-label-mono-sm text-[10px] uppercase text-outline">CONFIRM CHANGE</p>
+        <h2 id="confirmTitle" class="font-title-sm text-[16px] font-semibold text-on-surface">Is this correct?</h2>
+        <div id="confirmSummary" class="text-body-md my-3 bg-surface-container-low p-4 rounded-xl w-full text-left border border-outline-variant"></div>
+        <p class="font-label-mono-sm text-[11px] text-outline mb-4">Nothing changes until you confirm.</p>
+        <div class="flex justify-center gap-3 w-full">
+          <button id="editDraft" class="flex-1 py-2.5 rounded-full bg-surface-container hover:bg-surface-variant text-on-surface font-title-sm text-[13px] transition-colors">Edit</button>
+          <button id="saveDraft" class="flex-1 py-2.5 rounded-full bg-primary hover:bg-primary-container text-on-primary font-title-sm text-[13px] transition-colors shadow-md">Confirm & save</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <dialog id="deleteConfirmDialog" class="bg-surface-container-lowest text-on-surface p-6 rounded-2xl shadow-2xl backdrop:bg-slate-900/40 w-full max-w-sm m-auto border border-slate-200">
+      <div class="flex flex-col gap-2 text-center items-center">
+        <div class="w-12 h-12 rounded-full bg-error-container text-error flex items-center justify-center mb-1">
+          <span class="material-symbols-outlined text-[28px]">delete</span>
+        </div>
+        <h2 id="deleteConfirmTitle" class="font-title-sm text-[16px] font-semibold text-on-surface">Remove Item?</h2>
+        <p id="deleteConfirmBody" class="text-body-sm text-on-surface-variant my-2">This will remove the item from your active records. Its activity history will remain visible.</p>
+        <div class="flex justify-center gap-3 w-full mt-4">
+          <button id="deleteCancelBtn" class="flex-1 py-2 rounded-full bg-surface-container hover:bg-surface-variant text-on-surface font-title-sm text-[13px] transition-colors">Cancel</button>
+          <button id="deleteConfirmBtn" class="flex-1 py-2 rounded-full bg-error hover:bg-red-700 text-on-error font-title-sm text-[13px] transition-colors shadow-md">Remove item</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Resolve Return / Receive Dialog -->
+    <dialog id="resolveDialog" class="bg-surface-container-lowest text-on-surface p-6 rounded-2xl shadow-2xl backdrop:bg-slate-900/40 w-full max-w-md m-auto border border-slate-200">
+      <form id="resolveForm">
+        <div class="flex items-center justify-between mb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-secondary-container text-secondary flex items-center justify-center">
+              <span class="material-symbols-outlined">sync</span>
+            </div>
+            <div>
+              <p class="font-label-mono-sm text-[10px] uppercase text-outline">COMPLETE HANDOFF</p>
+              <h2 id="resolveTitle" class="font-title-sm text-[16px] font-semibold">Item returned</h2>
+            </div>
+          </div>
+          <button type="button" data-close class="text-outline hover:text-on-surface"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <input type="hidden" id="resolveId"/>
+        <div id="resolveCopy" class="text-body-md text-on-surface-variant my-4"></div>
+        <label id="returnedLocationField" class="flex flex-col gap-1 font-label-mono-sm text-[11px] text-on-surface-variant">Where will you keep it now?
+          <input id="returnedLocation" class="border border-outline-variant bg-surface-container-low rounded-lg p-2 text-body-md text-on-surface mt-1 focus:outline-primary" maxlength="100" placeholder="e.g. Bedroom shelf"/>
+        </label>
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" data-close class="px-4 py-2 rounded-full bg-surface-container hover:bg-surface-variant text-on-surface font-title-sm text-[13px] transition-colors">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-full bg-primary hover:bg-primary-container text-on-primary font-title-sm text-[13px] transition-colors shadow-md">Review change</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Privacy Details Dialog (Image 3) -->
+    <dialog id="privacyDialog" class="bg-surface-container-lowest text-on-surface p-6 sm:p-7 rounded-2xl shadow-2xl backdrop:bg-slate-900/40 w-full max-w-md m-auto border border-slate-200">
+      <div class="flex flex-col">
+        <!-- Top header: Shield badge + Close (X) -->
+        <div class="flex items-center justify-between mb-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-100/80 text-emerald-600 flex items-center justify-center">
+            <span class="material-symbols-outlined text-[22px]">verified_user</span>
+          </div>
+          <button type="button" data-close class="text-slate-400 hover:text-slate-700 transition-colors p-1">
+            <span class="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+
+        <!-- Privacy Category Tag -->
+        <span class="font-label-mono-sm text-[11px] font-bold text-primary uppercase tracking-wider">PRIVACY</span>
+
+        <!-- Title -->
+        <h2 class="font-bold text-[19px] text-slate-800 mt-1 mb-3">Your saved records stay local.</h2>
+
+        <!-- Description matching user screenshot Image 3 -->
+        <div class="flex flex-col gap-3 text-[13px] text-slate-600 leading-relaxed">
+          <p>Liora stores belongings and history in this browser. This prototype has no account, tracking, or public sharing.</p>
+          <p>Text messages and relevant item records are sent to AssemblyAI for AI responses. During voice mode, microphone audio is also sent to AssemblyAI for the live conversation. Avoid passwords, payment details, and sensitive personal information.</p>
+        </div>
+
+        <!-- Danger Action: Delete all Liora data -->
+        <div class="mt-6 pt-2">
+          <button type="button" id="deleteAllDataBtn" class="w-full py-2.5 px-4 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-[13px] flex items-center justify-center gap-2 transition-all active:scale-[0.99] border border-red-200/60">
+            <span class="material-symbols-outlined text-[17px]">delete</span>
+            <span>Delete all Liora data</span>
+          </button>
+        </div>
+      </div>
+    </dialog>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HOW LIORA WORKS — Help & guidance overlay
+       Accessible any time via sidebar "How Liora Works" link.
+       ═══════════════════════════════════════════════════════════════ -->
+  <div id="howItWorksOverlay" class="fixed inset-0 z-[200] bg-background flex flex-col items-start overflow-y-auto hidden">
+
+    <!-- Top bar matching the main app header style -->
+    <div class="sticky top-0 w-full bg-surface-container-lowest/90 backdrop-blur-xl border-b border-slate-200/80 z-10 flex items-center gap-3 px-4 sm:px-8 h-16 shrink-0">
+      <button id="howItWorksCloseBtn" class="flex items-center gap-2 text-on-surface-variant hover:text-on-surface transition-colors group">
+        <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+        <span class="text-[13px] font-semibold">Back to Liora</span>
+      </button>
+      <div class="flex-1 flex items-center justify-center">
+        <span class="font-label-mono-sm text-[11px] font-bold text-outline uppercase tracking-widest">Using Liora</span>
+      </div>
+      <!-- Right spacer to balance the back button -->
+      <div class="w-28"></div>
+    </div>
+
+    <!-- Scrollable content -->
+    <div class="w-full max-w-2xl mx-auto px-4 sm:px-6 py-10 flex flex-col gap-8">
+
+      <!-- Hero -->
+      <div class="flex flex-col gap-2">
+        <h1 class="text-[28px] sm:text-[34px] font-bold text-on-surface tracking-tight leading-tight">How Liora Works</h1>
+        <p class="text-[14px] text-on-surface-variant leading-relaxed">
+          Everything you need to get the most out of your voice-powered memory assistant.
+        </p>
+      </div>
+
+      <!-- Section 1: Telling Liora something -->
+      <div class="flex flex-col gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[20px]">mic</span>
+          </div>
+          <h2 class="text-[17px] font-bold text-on-surface">Telling Liora something</h2>
+        </div>
+        <p class="text-[13.5px] text-on-surface-variant leading-relaxed">
+          Speak or type naturally. Liora understands context — no special commands required. Just describe what happened.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div class="bg-surface-container-low rounded-xl p-3.5 border border-slate-200/60">
+            <p class="font-label-mono-sm text-[10px] text-outline uppercase tracking-wider mb-1.5">Storing something</p>
+            <p class="text-[13px] text-on-surface leading-snug">"My passport is in the bedroom drawer."</p>
+          </div>
+          <div class="bg-surface-container-low rounded-xl p-3.5 border border-slate-200/60">
+            <p class="font-label-mono-sm text-[10px] text-outline uppercase tracking-wider mb-1.5">Packing something</p>
+            <p class="text-[13px] text-on-surface leading-snug">"I packed my charger in my blue backpack."</p>
+          </div>
+          <div class="bg-surface-container-low rounded-xl p-3.5 border border-slate-200/60">
+            <p class="font-label-mono-sm text-[10px] text-outline uppercase tracking-wider mb-1.5">Lending something</p>
+            <p class="text-[13px] text-on-surface leading-snug">"I lent my camera to Sarah."</p>
+          </div>
+          <div class="bg-surface-container-low rounded-xl p-3.5 border border-slate-200/60">
+            <p class="font-label-mono-sm text-[10px] text-outline uppercase tracking-wider mb-1.5">Borrowing something</p>
+            <p class="text-[13px] text-on-surface leading-snug">"I borrowed Tom's umbrella."</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Asking Liora -->
+      <div class="flex flex-col gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[20px]">search</span>
+          </div>
+          <h2 class="text-[17px] font-bold text-on-surface">Asking Liora questions</h2>
+        </div>
+        <p class="text-[13.5px] text-on-surface-variant leading-relaxed">
+          Ask in plain language. Liora searches your saved records and answers instantly.
+        </p>
+        <div class="flex flex-col gap-2">
+          <div class="flex items-start gap-2.5 bg-surface-container-low rounded-xl p-3 border border-slate-200/60">
+            <span class="material-symbols-outlined text-primary text-[17px] mt-0.5 shrink-0">chat</span>
+            <p class="text-[13px] text-on-surface">"Where did I keep my headphones?" → Liora tells you the location.</p>
+          </div>
+          <div class="flex items-start gap-2.5 bg-surface-container-low rounded-xl p-3 border border-slate-200/60">
+            <span class="material-symbols-outlined text-primary text-[17px] mt-0.5 shrink-0">chat</span>
+            <p class="text-[13px] text-on-surface">"What have I lent out?" → Liora lists all your active loans.</p>
+          </div>
+          <div class="flex items-start gap-2.5 bg-surface-container-low rounded-xl p-3 border border-slate-200/60">
+            <span class="material-symbols-outlined text-primary text-[17px] mt-0.5 shrink-0">chat</span>
+            <p class="text-[13px] text-on-surface">"What did I pack?" → Liora shows everything currently packed.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Confirm before save -->
+      <div class="flex flex-col gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[20px]">check_circle</span>
+          </div>
+          <h2 class="text-[17px] font-bold text-on-surface">Review before saving</h2>
+        </div>
+        <p class="text-[13.5px] text-on-surface-variant leading-relaxed">
+          Liora never saves a record without showing it to you first. After understanding what you said, it drafts a summary and asks you to confirm — nothing changes until you tap <strong class="font-semibold text-on-surface">Confirm &amp; save</strong>.
+        </p>
+        <div class="flex items-center gap-3 bg-emerald-50 border border-emerald-200/70 rounded-xl p-4">
+          <span class="material-symbols-outlined text-emerald-500 text-[22px] shrink-0">verified</span>
+          <p class="text-[13px] text-emerald-700 leading-snug">You are always in control. Liora records nothing without your explicit confirmation.</p>
+        </div>
+      </div>
+
+      <!-- Section 4: Voice Mode -->
+      <div class="flex flex-col gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[20px]">record_voice_over</span>
+          </div>
+          <h2 class="text-[17px] font-bold text-on-surface">Voice Mode</h2>
+        </div>
+        <p class="text-[13.5px] text-on-surface-variant leading-relaxed">
+          Tap the blue microphone button at the bottom-right to start a live voice session. Liora listens, responds out loud, and can record items hands-free. Press <strong class="font-semibold text-on-surface">End Session</strong> when you are done.
+        </p>
+        <div class="flex items-center gap-3 bg-surface-container-low rounded-xl p-3.5 border border-slate-200/60">
+          <span class="material-symbols-outlined text-outline text-[18px] shrink-0">info</span>
+          <p class="text-[12.5px] text-on-surface-variant leading-snug">Voice mode requires microphone access and an active internet connection. Audio is processed by AssemblyAI to power the live conversation.</p>
+        </div>
+      </div>
+
+      <!-- Section 5: Tips -->
+      <div class="flex flex-col gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[20px]">lightbulb</span>
+          </div>
+          <h2 class="text-[17px] font-bold text-on-surface">Tips for the best experience</h2>
+        </div>
+        <div class="flex flex-col gap-2">
+          <div class="flex items-start gap-2.5 text-[13px] text-on-surface-variant">
+            <span class="material-symbols-outlined text-amber-500 text-[16px] mt-0.5 shrink-0">star</span>
+            <p>Be specific about locations — "top shelf in the kitchen cabinet" is better than "kitchen".</p>
+          </div>
+          <div class="flex items-start gap-2.5 text-[13px] text-on-surface-variant">
+            <span class="material-symbols-outlined text-amber-500 text-[16px] mt-0.5 shrink-0">star</span>
+            <p>Include the person's name when lending or borrowing — "I lent my drill to Ahmed" helps you search by name later.</p>
+          </div>
+          <div class="flex items-start gap-2.5 text-[13px] text-on-surface-variant">
+            <span class="material-symbols-outlined text-amber-500 text-[16px] mt-0.5 shrink-0">star</span>
+            <p>Use the History page to review every confirmed move and handoff over time.</p>
+          </div>
+          <div class="flex items-start gap-2.5 text-[13px] text-on-surface-variant">
+            <span class="material-symbols-outlined text-amber-500 text-[16px] mt-0.5 shrink-0">star</span>
+            <p>Avoid storing sensitive information like passwords or payment details.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Privacy note -->
+      <div class="flex items-start gap-3 bg-surface-container-low rounded-xl p-4 border border-slate-200/60">
+        <span class="material-symbols-outlined text-emerald-500 text-[20px] shrink-0 mt-0.5">verified_user</span>
+        <div class="flex flex-col gap-1">
+          <p class="text-[13px] font-semibold text-on-surface">Private by design</p>
+          <p class="text-[12.5px] text-on-surface-variant leading-snug">No account required. All records are stored in your browser only. Nothing is uploaded or shared — except what you send to Liora's AI for processing, which is not retained.</p>
+        </div>
+      </div>
+
+      <!-- Back button -->
+      <button id="howItWorksCloseBtnBottom" class="w-full py-3 rounded-full bg-primary hover:bg-primary-container text-white font-semibold text-[14px] transition-all shadow-md shadow-primary/20 active:scale-[0.98] flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+        Back to Liora
+      </button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

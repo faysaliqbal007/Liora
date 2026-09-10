@@ -1,0 +1,176 @@
+/* Responsive Design Variables & Layout System */
+:root {
+  --sidebar-width: 256px;
+  --page-padding: clamp(16px, 3vw, 40px);
+}
+
+.app-area {
+  padding-left: var(--sidebar-width);
+  transition: padding-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.topbar,
+.type-console,
+.voice-capsule {
+  left: var(--sidebar-width);
+  transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Sidebar Drawer for screens below 900px */
+.sidebar {
+  width: 256px;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 50;
+}
+
+@media (max-width: 899px) {
+  :root {
+    --sidebar-width: 0px;
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  }
+
+  .sidebar.is-open {
+    transform: translateX(0);
+  }
+}
+
+/* Fluid Dashboard Layout */
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+  gap: clamp(16px, 2vw, 28px);
+}
+
+@media (max-width: 1199px) {
+  .dashboard-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  
+  /* Assistant shows first on mobile — core experience is voice/text */
+  .assistant-pane {
+    position: static !important;
+    height: 480px !important;
+    max-height: 65vh !important;
+    order: -1;
+  }
+  
+  /* Items pane stacks below assistant */
+  #pageElementsPane {
+    order: 0;
+  }
+}
+
+/* Statistics auto-fit grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+/* Items auto-fit grid */
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: 16px;
+}
+
+/* Universal responsive dialog sizing */
+dialog {
+  width: min(calc(100% - 32px), 480px) !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+}
+
+/* Touch targets and safe area insets */
+@media (max-width: 640px) {
+  .touch-target {
+    min-height: 44px;
+  }
+}
+
+/* Toast notifications */
+#toast {
+  transform: translate(-50%, -20px);
+}
+#toast.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+}
+
+/* Modal backdrop */
+dialog::backdrop {
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+/* Page scrollbar: Always visible on the right side of the screen */
+html {
+  overflow-y: scroll;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.6) #f1f5f9;
+}
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+  display: block;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.6);
+  border-radius: 9999px;
+  border: 2px solid #f1f5f9;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.85);
+}
+
+/* Dedicated always-visible scrollbar inside the assistant messages panel */
+.chat-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.5) rgba(241, 245, 249, 0.6);
+  overflow-y: scroll !important;
+}
+.chat-scroll::-webkit-scrollbar {
+  width: 6px;
+  display: block;
+}
+.chat-scroll::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.6);
+  border-radius: 9999px;
+}
+.chat-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.5);
+  border-radius: 9999px;
+}
+.chat-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.85);
+}
+
+/* Equalizer and sonar animations for active voice session */
+@keyframes soundWave {
+  0%, 100% { height: 6px; }
+  50% { height: 36px; }
+}
+@keyframes pulseSonar {
+  0% { transform: scale(0.92); opacity: 0.8; }
+  50% { transform: scale(1.35); opacity: 0; }
+  100% { transform: scale(0.92); opacity: 0; }
+}
+.wave-bar {
+  animation: soundWave 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.sonar-ring {
+  animation: pulseSonar 2.6s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+
