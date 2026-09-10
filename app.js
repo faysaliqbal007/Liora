@@ -856,6 +856,8 @@ function handleChatSubmit() {
   const text = $("chatInput")?.value.trim();
   if (text) {
     if ($("chatInput")) $("chatInput").value = "";
+    // Blur to dismiss mobile keyboard and reset iOS Safari zoom
+    if ($("chatInput")) $("chatInput").blur();
     sendText(text);
   }
 }
@@ -983,7 +985,12 @@ document.querySelectorAll("#sidebarNav a").forEach(b => {
   };
 });
 
-if ($("searchInput")) $("searchInput").oninput = render;
+if ($("searchInput")) {
+  $("searchInput").oninput = render;
+  $("searchInput").onkeydown = e => {
+    if (e.key === "Enter") $("searchInput").blur();
+  };
+}
 
 // Filter pills & place/sort event handling
 document.querySelectorAll("#filterPills .filter-pill").forEach(btn => {

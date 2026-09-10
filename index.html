@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Liora — Voice & Physical Memory Assistant</title>
   <meta name="description" content="Voice-powered memory for physical belongings, helping students and young professionals keep track of what they store, pack, lend, and borrow."/>
   <meta name="theme-color" content="#003594"/>
@@ -116,6 +116,26 @@
     .chat-scroll::-webkit-scrollbar-thumb {
       background-color: rgba(148, 163, 184, 0.5) !important;
       border-radius: 9999px !important;
+    }
+    /* Mobile auto-zoom prevention: inputs must be at least 16px font-size on touch devices */
+    input,
+    textarea,
+    select,
+    #searchInput,
+    #chatInput {
+      font-size: 16px !important;
+    }
+    @media (min-width: 640px) {
+      #searchInput {
+        font-size: 13.5px !important;
+      }
+      #chatInput {
+        font-size: 13.5px !important;
+      }
+      #placeFilter,
+      #sortSelect {
+        font-size: 12px !important;
+      }
     }
   </style>
 </head>
